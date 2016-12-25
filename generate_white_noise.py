@@ -35,21 +35,6 @@ def get_signal(freqs, responses, nyquist, sampling_rate, duration=10, lb_type='l
 	'amplitudes'	- array of amplitudes corresponding to the time values in 'times'
 	'''
 
-	# Check that 'nyquist' and 'sampling_rate' agree
-	if not nyquist and not sampling_rate:
-		raise Exception('\nEither nyquist or sampling_rate must be provided\n')
-	elif nyquist and sampling_rate:
-		if nyquist != sampling_rate/2.0:
-			raise Exception('\nnyquist must equal sampling_rate/2\n')
-	elif nyquist:
-		sampling_rate = 2*nyquist
-		if nyquist < max(freqs):
-			raise Exception('\nfreqs may not contain values greater than nyquist\n')
-	elif sampling_rate:
-		nyquist = sampling_rate/2.0
-		if sampling_rate/2.0 < max(freqs):
-			raise Exception('\nfreqs may not contain values greater than sampling_rate/2\n')
-
 	# Interpolate the values in freqs according to 'lb_type' and 'ub_type'
 	# Add additional values at the boundaries for 0 and nyquist if not already included
 	freqs_extended = list(freqs)
@@ -76,7 +61,7 @@ def get_signal(freqs, responses, nyquist, sampling_rate, duration=10, lb_type='l
 	max_freq = freqs_extended[max_freq_idx]  # don't want to search the array multiple times
 	if max_freq > nyquist:
 		raise Exception('\nfrequencies cannot be greater than nyquist\n')
-	elif max_freq < 0:
+	elif max_freq < nyquist:
 		if ub_type == 'flat':
 			freqs_extended.append(nyquist)
 			responses_extended.append(responses_extended[max_freq_idx])
@@ -103,6 +88,48 @@ def get_signal(freqs, responses, nyquist, sampling_rate, duration=10, lb_type='l
 	x_t = np.arange(0,duration,1.0/sampling_rate) # times
 
 	return x_t, signal_t
-  
-# plt.plot(abs(fft(t_real_signal))[0:len(t_real_signal)/2])
-# plt.show()
+
+
+def generate_white_noise(outfile_path, freqs, responses, nyquist=None, sampling_rate=None, duration=10, lb_type='linear', ub_type='linear', eps=0.001):
+	'''
+	Generates noise with a desired frequency distribution. Can be used for testing audio equipment.
+	The provided frequency response values are linearly interpolated between to obtain a continuous frequency response curve.
+	
+	The behavior of the response curve near freq=0 and freq=nyquist are determined by the 'lb_type' and 'ub_type' parameters.
+	The options for these parameters are:
+	1) 'zero'	- response equals zero outside of freqs
+	2) 'flat'	- response value at the extremal end of freqs is repeated for all values outside of freqs
+	3) 'linear'	- response is linearly interpolated outside of freqs, decreasing to zero at the boundary
+
+	Inputs:
+	'outfile_path'  - path where generated wav file should be saved
+	'freqs' 		- array of frequencies, in Hz
+	'responses' 	- array of responses corresponding to the frequency values in 'freqs'
+	'nyquist'		- the nyquist limit of the generated signal, in Hz (if sampling_rate is also given, it must equal 2*nyquist)
+	'sampling_rate'	- the sampling rate of the generated signal, in Hz (if nyquist is also given, it must equal sampling_rate/2)
+	'duration'		= the duration of the generated signal, in seconds (10sec by default)
+	'lb_type'		- how the frequency response should behave between 0 and min(freqs), one of 'zero', 'flat', or 'linear' (linear by default)
+	'ub_type'		- how the frequency response should behave between max(freqs) and nyquist, one of 'zero', 'flat', or 'linear' (linear by default)
+	'eps'			- the epsilon jump after which the response drops to zero in the 'zero' condition (defaults to 0.001Hz)
+
+	Outputs: None
+	'''
+
+	# Check that 'nyquist' and 'sampling_rate' agree
+	if not nyquist and not sampling_rate:
+		raise Exception('\nEither nyquist or sampling_rate must be provided\n')
+	elif nyquist and sampling_rate:
+		if nyquist != sampling_rate/2.0:
+			raise Exception('\nnyquist must equal sampling_rate/2\n')
+	elif nyquist:
+		sampling_rate = 2*nyquist
+		if nyquist < max(freqs):
+			raise Exception('\nfreqs may not contain values greater than nyquist\n')
+	elif sampling_rate:
+		nyquist = sampling_rate/2.0
+		if sampling_rate/2.0 < max(freqs):
+			raise Exception('\nfreqs may not contain values greater than sampling_rate/2\n')
+
+	t, signal = get_signal(freqs, responses, nyquist, sampling_rate, duration, lb_type, ub_type, eps)
+	signal = np.array(0.8*signal/max(abs(signal)), dtype='float32') # rescale signal so that its max is 80% of wav file limit
+	write(outfile_path, sampling_rate, signal)

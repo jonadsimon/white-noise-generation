@@ -1,16 +1,7 @@
 # white-noise-generation
 
-Inputs/parameters:
+Generates a wav file containing white noise with a specific frequency distribution. Can be used for testing audio equipment. 
 
-infile_name: comma-separated frequency/amplitude values (DECIBELS?)
-outfile_name: name of output WAV file
-~~interpolation_type: linear or cubic spline~~
-nyquist_frequency: either maximum input frequency, or provided frequency
-sampling_rate: 2x nyquist frequency; either of the two parameters can be given, but not both
-duration: duration of white noise
-lower_bound_interpolation: zero, flat, or linear ~~, or spline (?)~~
-upper_bound_interpolation: zero, flat, or linear ~~, or spline (?)~~
+See documentation in 'generate_white_noise.py' and 'examples.py' for details
 
-Outputs:
-
-WAV file containing desired white noise
+TODO: Take logs of raw amplitudes so that results can be naturally expessed in decibels  
